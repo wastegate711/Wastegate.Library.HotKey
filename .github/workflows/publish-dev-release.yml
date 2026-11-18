@@ -1,0 +1,59 @@
+name: Publish dev package release
+
+on:
+  workflow_run:
+    workflows:
+      - Build and package PR
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: read
+
+jobs:
+  publish:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find same-repository PR targeting dev
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
+            const pullRequests = await github.paginate(
+              github.rest.repos.listPullRequestsAssociatedWithCommit,
+              { owner, repo, commit_sha: run.head_sha }
+            );
+            const pullRequest = pullRequests.find(pr =>
+              pr.base.ref === 'dev' &&
+              pr.head.repo?.full_name === process.env.GITHUB_REPOSITORY
+            );
+
+            if (!pullRequest) {
+              core.setFailed('No same-repository pull request targeting dev was found for this build.');
+              return;
+            }
+
+            core.setOutput('number', pullRequest.number);
+
+      - name: Download package from completed build
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-package
+          path: artifacts
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev-pr-${{ steps.pr.outputs.number }}-${{ github.event.workflow_run.head_sha }}-${{ github.event.workflow_run.run_attempt }}
+          target_commitish: ${{ github.event.workflow_run.head_sha }}
+          name: Dev package for PR #${{ steps.pr.outputs.number }}
+          prerelease: true
+          files: artifacts/*.nupkg
+          fail_on_unmatched_files: true

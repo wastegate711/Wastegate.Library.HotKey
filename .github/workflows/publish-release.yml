@@ -1,0 +1,50 @@
+name: Publish release
+
+on:
+  push:
+    branches:
+      - release
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore HotKey/HotKey.csproj
+
+      - name: Pack stable package
+        run: dotnet pack HotKey/HotKey.csproj --configuration Release --no-restore --output ./artifacts -p:Version=1.0.${{ github.run_number }}
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: release-${{ github.sha }}
+          target_commitish: ${{ github.sha }}
+          name: Release 1.0.${{ github.run_number }}
+          prerelease: false
+          files: artifacts/*.nupkg
+          fail_on_unmatched_files: true
+
+      - name: Publish to NuGet.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "Required repository secret NUGET_API_KEY is not configured." >&2
+            exit 1
+          fi
+          dotnet nuget push artifacts/*.nupkg \
+            --api-key "$NUGET_API_KEY" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate

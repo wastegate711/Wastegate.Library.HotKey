@@ -2,6 +2,22 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Wastegate.Library.HotKey</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>wastegate711</Authors>
+    <Description>Платформенно-независимая библиотека для привязки сочетаний клавиш к обработчикам.</Description>
+    <PackageTags>hotkey;keyboard-shortcuts;bindings</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>Images/package-icon.png</PackageIcon>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/wastegate711/Wastegate.Library.HotKey</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="/" />
+    <None Include="../Images/west.png" Pack="true" PackagePath="Images/" />
+    <None Include="../Images/package-icon.png" Pack="true" PackagePath="Images/" />
+  </ItemGroup>
 
 </Project>

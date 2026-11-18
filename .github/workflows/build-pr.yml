@@ -1,0 +1,42 @@
+name: Build and package PR
+
+on:
+  pull_request:
+    branches:
+      - dev
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore HotKey/HotKey.csproj
+
+      - name: Build
+        run: dotnet build HotKey/HotKey.csproj --configuration Release --no-restore
+
+      - name: Pack dev package
+        run: dotnet pack HotKey/HotKey.csproj --configuration Release --no-build --no-restore --output ./artifacts -p:Version=1.0.0-dev.${{ github.run_number }}.${{ github.run_attempt }}
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: artifacts/*.nupkg
+          if-no-files-found: error
+          retention-days: 7
