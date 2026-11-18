@@ -1,3 +1,6 @@
 <Solution>
+  <Folder Name="/Элементы решения/">
+    <File Path="Images/west.png" />
+  </Folder>
   <Project Path="HotKey/HotKey.csproj" />
 </Solution>
